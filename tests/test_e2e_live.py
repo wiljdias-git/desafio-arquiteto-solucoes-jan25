@@ -8,11 +8,13 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import httpx
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+JsonDict = dict[str, Any]
 
 
 def _get_free_port() -> int:
@@ -21,7 +23,7 @@ def _get_free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def _wait_for_json(url: str, timeout_seconds: float = 15.0) -> dict:
+def _wait_for_json(url: str, timeout_seconds: float = 15.0) -> JsonDict:
     deadline = time.time() + timeout_seconds
     last_error: Exception | None = None
     while time.time() < deadline:
@@ -109,14 +111,15 @@ def test_live_services_recover_backlog_after_balance_downtime(tmp_path: Path) ->
             assert first_debit.status_code == 201
 
             deadline = time.time() + 10
-            initial_balance: dict | None = None
+            initial_balance: JsonDict | None = None
             while time.time() < deadline:
                 balance_response = httpx.get(
                     f"http://127.0.0.1:{balance_port}/balances/2026-01-25",
                     timeout=5.0,
                 )
-                initial_balance = balance_response.json()
-                if initial_balance["balance"] == "74.50":
+                current_balance: JsonDict = balance_response.json()
+                initial_balance = current_balance
+                if current_balance["balance"] == "74.50":
                     break
                 time.sleep(0.2)
 
@@ -155,20 +158,22 @@ def test_live_services_recover_backlog_after_balance_downtime(tmp_path: Path) ->
             _wait_for_json(f"http://127.0.0.1:{balance_port}/health")
 
             deadline = time.time() + 10
-            recovered_balance: dict | None = None
-            recovered_health: dict | None = None
+            recovered_balance: JsonDict | None = None
+            recovered_health: JsonDict | None = None
             while time.time() < deadline:
-                recovered_balance = httpx.get(
+                current_recovered_balance: JsonDict = httpx.get(
                     f"http://127.0.0.1:{balance_port}/balances/2026-01-25",
                     timeout=5.0,
                 ).json()
-                recovered_health = httpx.get(
+                current_recovered_health: JsonDict = httpx.get(
                     f"http://127.0.0.1:{transactions_port}/health",
                     timeout=5.0,
                 ).json()
+                recovered_balance = current_recovered_balance
+                recovered_health = current_recovered_health
                 if (
-                    recovered_balance["balance"] == "82.50"
-                    and recovered_health["pending_backlog_entries"] == 0
+                    current_recovered_balance["balance"] == "82.50"
+                    and current_recovered_health["pending_backlog_entries"] == 0
                 ):
                     break
                 time.sleep(0.2)
@@ -177,4 +182,3 @@ def test_live_services_recover_backlog_after_balance_downtime(tmp_path: Path) ->
             assert recovered_health is not None
             assert recovered_balance["balance"] == "82.50"
             assert recovered_health["pending_backlog_entries"] == 0
-

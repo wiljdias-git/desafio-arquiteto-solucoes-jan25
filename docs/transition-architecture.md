@@ -31,4 +31,3 @@ flowchart LR
 - possibilidade de comparar saldos entre legado e nova solucao
 - rollback mais simples
 - evolucao progressiva para mensageria e banco dedicados
-
