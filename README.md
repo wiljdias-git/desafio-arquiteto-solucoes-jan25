@@ -299,9 +299,22 @@ Para facilitar a avaliacao e a execucao local, a prova de conceito usa SQLite e 
 
 ## Publicacao em GitHub
 
-O repositorio local ja esta inicializado em Git e com commit em `main`. Para publicar em um repositório publico:
+O projeto **ja esta publicado** no GitHub publico e sincronizado com o remoto:
+
+```text
+https://github.com/wiljdias-git/desafio-arquiteto-solucoes-jan25
+```
+
+Estado atual do repositorio local:
+
+- branch: `main`
+- remoto: `origin`
+- sincronizado com `origin/main`
+
+Para enviar novas alteracoes apos futuras mudancas:
 
 ```bash
-git remote add origin <url-do-repositorio-publico>
-git push -u origin main
+git add .
+git commit -m "sua mensagem"
+git push origin main
 ```
