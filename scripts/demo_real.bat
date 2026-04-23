@@ -8,11 +8,13 @@ if exist "%ROOT_DIR%\.venv\Scripts\python.exe" (
   exit /b %ERRORLEVEL%
 )
 
-where python >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
-  python "%ROOT_DIR%\scripts\demo_real.py" %*
+powershell -ExecutionPolicy Bypass -File "%ROOT_DIR%\scripts\bootstrap_windows.ps1"
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+
+if exist "%ROOT_DIR%\.venv\Scripts\python.exe" (
+  "%ROOT_DIR%\.venv\Scripts\python.exe" "%ROOT_DIR%\scripts\demo_real.py" %*
   exit /b %ERRORLEVEL%
 )
 
-py -3 "%ROOT_DIR%\scripts\demo_real.py" %*
-exit /b %ERRORLEVEL%
+echo [FAIL] Nao foi possivel localizar .venv\Scripts\python.exe apos o bootstrap.
+exit /b 1

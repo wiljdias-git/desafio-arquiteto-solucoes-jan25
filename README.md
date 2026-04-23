@@ -17,6 +17,7 @@ Este repositorio entrega uma solucao completa para o desafio descrito em `init.m
 - `tests/`: testes automatizados
 - `docs/`: documentacao arquitetural e complementar
 - `scripts/load_balance_service.py`: script simples de carga para o servico de consolidado
+- `scripts/bootstrap_windows.ps1`: bootstrap oficial do ambiente Windows
 - `scripts/demo_real.py`: implementacao cross-platform da demonstracao ponta a ponta
 - `scripts/demo_real.sh`: wrapper para Linux/macOS
 - `scripts/demo_real.bat`: wrapper para Windows
@@ -38,53 +39,36 @@ python -m pip install -r requirements.txt
 
 ### Windows PowerShell
 
-Primeiro confirme se o Python realmente existe no ambiente:
+Fluxo recomendado e suportado pela documentacao:
 
 ```powershell
-Get-Command py, python
+powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap_windows.ps1
 ```
 
-Se **nenhum** dos dois comandos existir, instale o Python 3.12+ e reabra o PowerShell.
+Esse bootstrap:
 
-Opcao 1, via `winget`:
+- localiza um Python valido se ele ja existir
+- instala Python 3.12 via `winget` quando necessario
+- cria `.venv`
+- instala as dependencias do projeto
+
+Depois disso, rode os comandos do projeto sem depender de ativacao manual:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts\demo_real.py
+```
+
+Se o bootstrap nao conseguir instalar/localizar o Python automaticamente, o caminho manual e:
 
 ```powershell
 winget install -e --id Python.Python.3.12
-```
-
-Opcao 2, instalador oficial:
-
-```text
-https://www.python.org/downloads/windows/
 ```
 
 Se o Windows continuar mostrando a mensagem da Microsoft Store, desabilite os aliases em:
 
 ```text
 Configuracoes > Aplicativos > Configuracoes avancadas de aplicativos > Aliases de execucao do aplicativo
-```
-
-Depois rode:
-
-```powershell
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-Se apenas `py` falhar, mas `python` existir, use:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-Se a ativacao do ambiente virtual for bloqueada pela politica de execucao do PowerShell, rode:
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\.venv\Scripts\Activate.ps1
 ```
 
 ## Executando os servicos
@@ -268,9 +252,10 @@ python -m pytest tests/test_e2e_live.py -q
 
 Windows:
 
-```bat
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap_windows.ps1
+.\.venv\Scripts\python.exe -m pytest tests\test_e2e_live.py -q
 scripts\demo_real.bat
-python -m pytest tests\test_e2e_live.py -q
 ```
 
 Essa e a forma mais objetiva de mostrar:
