@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,11 +14,12 @@ from services.transactions_service.main import create_app as create_transactions
 
 TEST_DESCRIPTIONS: dict[str, str] = {}
 TEST_RESULTS: list[tuple[str, str, float]] = []
-TERMINAL_REPORTER = None
+TERMINAL_REPORTER: Any = None
 
 
 def _describe_test(item: pytest.Item) -> str:
-    docstring = inspect.getdoc(item.obj) if hasattr(item, "obj") else None
+    test_object = getattr(item, "obj", None)
+    docstring = inspect.getdoc(test_object) if test_object is not None else None
     if docstring:
         return docstring.splitlines()[0].strip()
     return item.name.replace("_", " ")
@@ -73,7 +75,7 @@ def pytest_runtest_logreport(report: pytest.TestReport) -> None:
 
 @pytest.hookimpl(trylast=True)
 def pytest_terminal_summary(
-    terminalreporter: pytest.TerminalReporter,
+    terminalreporter: Any,
     exitstatus: int,
     config: pytest.Config,
 ) -> None:
