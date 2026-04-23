@@ -4,7 +4,7 @@ Este arquivo registra evidencias reais coletadas a partir de:
 
 - testes automatizados
 - teste E2E com servicos reais via HTTP
-- demonstracao manual automatizada por script
+- demonstracao automatizada ponta a ponta
 - teste de carga do servico de consolidado
 
 ## Evidencia 1 - suite de testes automatizados
@@ -12,7 +12,7 @@ Este arquivo registra evidencias reais coletadas a partir de:
 Comando executado:
 
 ```bash
-.venv/bin/pytest -q
+python -m pytest -q
 ```
 
 Saida observada em formato humano:
@@ -26,130 +26,145 @@ Falhas: 0
 Pulados: 0
 
 Leitura por cenario:
-  [PASS] Processa o backlog pendente e retorna o saldo diario consolidado correto.
-  [PASS] Recupera backlog acumulado apos indisponibilidade do consolidado sem perder lancamentos.
-  [PASS] Executa o fluxo ponta a ponta com servicos reais via HTTP, incluindo queda e recuperacao do consolidado.
-  [PASS] Registra credito e debito e comprova que os lancamentos ficam persistidos com backlog pendente para consolidacao.
-  [PASS] Mantem o servico transacional aceitando lancamentos mesmo sem o consolidado disponivel.
-  [PASS] Rejeita valores invalidos para proteger a integridade do fluxo de caixa.
-
-6 passed
+  [PASS] Processa o backlog pendente e retorna o saldo diario consolidado correto. (0.01s)
+  [PASS] Recupera backlog acumulado apos indisponibilidade do consolidado sem perder lancamentos. (0.02s)
+  [PASS] Executa o fluxo ponta a ponta com servicos reais via HTTP, incluindo queda e recuperacao do consolidado. (2.08s)
+  [PASS] Registra credito e debito e comprova que os lancamentos ficam persistidos com backlog pendente para consolidacao. (0.02s)
+  [PASS] Mantem o servico transacional aceitando lancamentos mesmo sem o consolidado disponivel. (0.01s)
+  [PASS] Rejeita valores invalidos para proteger a integridade do fluxo de caixa. (0.00s)
+Leitura recomendada: cada linha [PASS]/[FAIL]/[SKIP] descreve o comportamento validado.
+6 passed in 2.23s
 ```
 
 ## Evidencia 2 - demonstracao real ponta a ponta
 
-Comando executado:
+Comando canonico:
+
+```bash
+python scripts/demo_real.py
+```
+
+Wrappers equivalentes:
 
 ```bash
 ./scripts/demo_real.sh
+```
+
+```bat
+scripts\demo_real.bat
 ```
 
 Saida observada:
 
 ```text
 ======================================================================
-DEMONSTRAÇÃO AUTOMATIZADA DO DESAFIO
+DEMONSTRACAO AUTOMATIZADA DO DESAFIO
 ======================================================================
-Objetivo: executar uma prova real, com avaliação dinâmica baseada nos retornos da API.
-Configuração desta execução: data=<data-configurada>, porta transactions=<porta-dinamica>, porta balance=<porta-dinamica>.
+Objetivo: executar uma prova real, com avaliacao dinamica baseada nos retornos da API.
+Configuracao desta execucao: data=2026-01-25, porta transactions=50523, porta balance=35815.
 
 ======================================================================
-1) SUBIDA DOS SERVIÇOS
+1) SUBIDA DOS SERVICOS
 ======================================================================
-[OK] transactions-service iniciou saudável: status=ok, backlog=0
-[OK] balance-service iniciou saudável: status=ok, backlog=0
+
+[ETAPA] Iniciando transactions-service em 127.0.0.1:50523
+
+[ETAPA] Iniciando balance-service em 127.0.0.1:35815
+[OK] transactions-service iniciou saudavel: status=ok, backlog=0
+[OK] balance-service iniciou saudavel: status=ok, backlog=0
 [RESULTADO] Health inicial do transactions-service
 {
   "service": "transactions-service",
   "status": "ok",
   "pending_backlog_entries": 0
 }
-  -> Status retornado=ok; backlog atual=0.
-  -> Comparação: backlog esperado=0.
-  -> Interpretação: o serviço está sincronizado e sem pendências.
+[RESULTADO] Health inicial do balance-service
+{
+  "service": "balance-service",
+  "status": "ok",
+  "pending_backlog_entries": 0
+}
 
 ======================================================================
-2) LANÇAMENTOS INICIAIS E CONSOLIDAÇÃO
+2) LANCAMENTOS INICIAIS E CONSOLIDACAO
 ======================================================================
-[ETAPA] Registrando crédito inicial de <valor-configurado>
-[OK] crédito inicial aceito: tipo=credit, valor=<valor-configurado>, data=<data-configurada>
-[RESULTADO] Crédito inicial registrado
+
+[ETAPA] Registrando credit inicial de 100.00
+[OK] credito inicial aceito: tipo=credit, valor=100.00, data=2026-01-25
+[RESULTADO] Credito inicial registrado
 {
-  "id": "<uuid-dinamico>",
+  "id": "d309f620-673a-40e6-be22-b611b0d0442c",
   "type": "credit",
-  "amount": "<valor-configurado>",
-  "date": "<data-configurada>",
-  "description": "<descricao-configurada>",
-  "created_at": "<timestamp-dinamico>"
+  "amount": "100.00",
+  "date": "2026-01-25",
+  "description": "Venda no caixa",
+  "created_at": "2026-04-23T21:28:15.656928Z"
 }
-  -> Lançamento aceito com id=<uuid-dinamico>, efeito=+<valor-configurado>, data=<data-configurada>.
-  -> Comparação: valor esperado=<valor-configurado>; valor retornado=<valor-configurado>.
-[OK] extrato inicial consistente: quantidade=2
-[OK] saldo inicial consolidado correto: saldo=<saldo-dinamico>, data=<data-configurada>
-[RESULTADO] Saldo consolidado inicial
+[ETAPA] Registrando debit inicial de 25.50
+[OK] debito inicial aceito: tipo=debit, valor=25.50, data=2026-01-25
+[RESULTADO] Debito inicial registrado
 {
-  "date": "<data-configurada>",
-  "balance": "<saldo-dinamico>",
-  "updated_at": "<timestamp-dinamico>"
+  "id": "1bc72398-cc0d-4360-b10c-d7ef94235816",
+  "type": "debit",
+  "amount": "25.50",
+  "date": "2026-01-25",
+  "description": "Pagamento de fornecedor",
+  "created_at": "2026-04-23T21:28:15.662948Z"
 }
-  -> Saldo retornado=<saldo-dinamico> para a data <data-configurada>.
-  -> Comparação: esperado=<saldo-esperado>; diferença=0.00.
+[OK] extrato inicial consistente: quantidade=2
+[OK] saldo inicial consolidado correto: saldo=74.50, data=2026-01-25
+[OK] lista inicial de saldos consistente: quantidade=1
 
 ======================================================================
 3) FALHA CONTROLADA DO CONSOLIDADO
 ======================================================================
-[INFO] balance-service foi interrompido de forma controlada para validar a resiliência.
-[OK] transactions-service acumulou backlog pendente esperado: status=ok, backlog=<backlog-esperado>
-[RESULTADO] Health com backlog pendente
-{
-  "service": "transactions-service",
-  "status": "ok",
-  "pending_backlog_entries": "<backlog-esperado>"
-}
-  -> Status retornado=ok; backlog atual=<backlog-esperado>.
-  -> Comparação: backlog esperado=<backlog-esperado>.
-  -> Interpretação: o serviço segue online com pendências enquanto o consolidado está offline.
+
+[ETAPA] Derrubando balance-service para simular indisponibilidade
+[INFO] balance-service foi interrompido de forma controlada para validar a resiliencia.
+[ETAPA] Enviando novos lancamentos enquanto o consolidado esta offline
+[OK] credito offline aceito: tipo=credit, valor=10.00, data=2026-01-25
+[OK] debito offline aceito: tipo=debit, valor=2.00, data=2026-01-25
+[OK] transactions-service acumulou backlog pendente esperado: status=ok, backlog=2
 
 ======================================================================
-4) RECUPERAÇÃO AUTOMÁTICA DO BACKLOG
+4) RECUPERACAO AUTOMATICA DO BACKLOG
 ======================================================================
-[OK] saldo final recomposto corretamente: saldo=<saldo-final>, data=<data-configurada>
-[RESULTADO] Saldo após recuperação
-{
-  "date": "<data-configurada>",
-  "balance": "<saldo-final>",
-  "updated_at": "<timestamp-dinamico>"
-}
-  -> Saldo retornado=<saldo-final> para a data <data-configurada>.
-  -> Comparação: esperado=<saldo-final>; diferença=0.00.
-[OK] extrato final contém todos os lançamentos esperados: quantidade=<quantidade-final>
+
+[ETAPA] Subindo novamente balance-service em 127.0.0.1:35815
+[OK] saldo final recomposto corretamente: saldo=82.50, data=2026-01-25
+[OK] extrato final contem todos os lancamentos esperados: quantidade=4
 [OK] lista final de saldos permanece consistente: quantidade=1
 [OK] transactions-service terminou sem backlog: status=ok, backlog=0
-[OK] balance-service terminou saudável: status=ok, backlog=0
+[OK] balance-service terminou saudavel: status=ok, backlog=0
 
 ======================================================================
 5) TESTE DE CARGA NO CONSOLIDADO
 ======================================================================
 [RESULTADO] Teste de carga do balance-service
-  - total: <requests-configurados>
-  - success: <requests-com-sucesso>
-  - failed: <requests-com-falha>
-  - loss_percent: <perda-observada>
-  - rps: <valor-dinamico>
-  -> Comparação: rps mínimo esperado=<min-rps>; rps observado=<valor-dinamico>; perda máxima esperada=<max-loss>%.
-  -> Interpretação: a API sustentou a carga alvo quando os critérios acima forem satisfeitos.
+  - total: 100
+  - success: 100
+  - failed: 0
+  - loss_percent: 0.00
+  - rps: 426.51
+  -> Comparação: rps mínimo esperado=50.00; rps observado=426.51; perda máxima esperada=5.00%; perda observada=0.00%.
+  -> Interpretação: a API sustentou a carga alvo com folga.
 
 ======================================================================
 RESUMO FINAL
 ======================================================================
-[OK|FAIL] Inicialização dos serviços: status inicial=<status>; backlog inicial=<valor>.
-[OK|FAIL] Consolidação inicial: esperado=<saldo-esperado>; retornado=<saldo-observado>; lançamentos=<quantidade>.
-[OK|FAIL] Resiliência durante a falha: backlog esperado=<valor>; backlog observado=<valor>.
-[OK|FAIL] Recuperação após a falha: saldo esperado=<valor>; saldo retornado=<valor>; lançamentos=<quantidade>; backlog final=<valor>.
-[OK|FAIL] Teste de carga: rps mínimo=<valor>; rps observado=<valor>; perda máxima=<valor>; perda observada=<valor>.
+[OK] Inicializacao dos servicos: status inicial=ok; backlog inicial=0.
+[OK] Consolidacao inicial: esperado=74.50; retornado=74.50; lancamentos=2.
+[OK] Resiliencia durante a falha: backlog esperado=2; backlog observado=2.
+[OK] Recuperacao apos a falha: saldo esperado=82.50; saldo retornado=82.50; lancamentos=4; backlog final=0.
+[OK] Teste de carga: rps minimo=50.00; rps observado=426.51; perda maxima=5.00%; perda observada=0.00%.
+
+Logs gerados:
+  - /home/wiljdias/git/personal/desafio-arquiteto-solucoes-jan25/data/demo-transactions.log
+  - /home/wiljdias/git/personal/desafio-arquiteto-solucoes-jan25/data/demo-balance.log
+Banco usado nesta execucao: /home/wiljdias/git/personal/desafio-arquiteto-solucoes-jan25/data/demo-real.db
 ```
 
-Os campos `id`, `created_at`, `updated_at`, portas, `rps` e parte dos detalhes do resumo variam a cada execucao. O que permanece fixo e a logica de avaliacao: o script compara valores observados com os valores esperados calculados dinamicamente.
+Os campos de ids, timestamps, portas, throughput e caminhos variam a cada execucao. O que permanece fixo e a logica de avaliacao: `scripts/demo_real.py` calcula os valores esperados dinamicamente, compara com o retorno real das APIs e emite `[OK]` ou `[FAIL]` conforme o resultado observado.
 
 ## Evidencia 3 - imports do ambiente Python
 

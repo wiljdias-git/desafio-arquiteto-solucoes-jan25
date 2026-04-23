@@ -17,7 +17,9 @@ Este repositorio entrega uma solucao completa para o desafio descrito em `init.m
 - `tests/`: testes automatizados
 - `docs/`: documentacao arquitetural e complementar
 - `scripts/load_balance_service.py`: script simples de carga para o servico de consolidado
-- `scripts/demo_real.sh`: demonstracao ponta a ponta com servicos reais via HTTP
+- `scripts/demo_real.py`: implementacao cross-platform da demonstracao ponta a ponta
+- `scripts/demo_real.sh`: wrapper para Linux/macOS
+- `scripts/demo_real.bat`: wrapper para Windows
 
 ## Requisitos
 
@@ -26,10 +28,20 @@ Este repositorio entrega uma solucao completa para o desafio descrito em `init.m
 
 ## Instalacao
 
+### Linux/macOS
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+```
+
+### Windows PowerShell
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
 ## Executando os servicos
@@ -37,13 +49,13 @@ pip install -r requirements.txt
 Em um terminal:
 
 ```bash
-uvicorn services.transactions_service.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn services.transactions_service.main:app --host 0.0.0.0 --port 8000
 ```
 
 Em outro terminal:
 
 ```bash
-uvicorn services.balance_service.main:app --host 0.0.0.0 --port 8001
+python -m uvicorn services.balance_service.main:app --host 0.0.0.0 --port 8001
 ```
 
 ## APIs implementadas
@@ -107,13 +119,13 @@ curl 'http://127.0.0.1:8001/balances/2026-01-25'
 ## Testes
 
 ```bash
-.venv/bin/pytest
+python -m pytest
 ```
 
 Ou, para uma leitura mais enxuta:
 
 ```bash
-.venv/bin/pytest -q
+python -m pytest -q
 ```
 
 O comando `pytest -q` agora entrega um **resumo humano por cenario**, com:
@@ -132,18 +144,30 @@ O comando `pytest -q` agora entrega um **resumo humano por cenario**, com:
 Com o servico de consolidado no ar:
 
 ```bash
-python3 scripts/load_balance_service.py --url http://127.0.0.1:8001/balances/2026-01-25 --requests 100 --concurrency 50
+python scripts/load_balance_service.py --url http://127.0.0.1:8001/balances/2026-01-25 --requests 100 --concurrency 50
 ```
 
 O objetivo do script e demonstrar que a API atende uma rajada com **50 requisicoes concorrentes** e medir a taxa de perda observada.
 
 ## Demonstracao real automatizada
 
+Comando canonico cross-platform:
+
+```bash
+python scripts/demo_real.py
+```
+
+Atalhos por sistema operacional:
+
 ```bash
 ./scripts/demo_real.sh
 ```
 
-O script:
+```bat
+scripts\demo_real.bat
+```
+
+A implementacao compartilhada em `scripts/demo_real.py`:
 
 1. sobe os dois servicos com `uvicorn`
 2. registra lancamentos reais por HTTP
@@ -162,13 +186,13 @@ O output foi desenhado para leitura humana e agora mostra:
 - comparacao entre valor esperado e valor realmente retornado pela API
 - portas livres escolhidas em tempo de execucao para evitar conflito local
 - resumo final com status calculado dinamicamente a partir dos resultados observados
-- secao explicita de falha com etapa, linha e comando quando a execucao quebra
+- secao explicita de falha com a etapa atual e o erro real quando a execucao quebra
 
 O comportamento esperado e:
 
 - se os resultados reais coincidirem com os esperados, o resumo final mostra linhas com `[OK]`
 - se algum valor nao bater, o resumo final mostra `[FAIL]`
-- se a execucao quebrar antes do resumo, o script imprime `FALHA NA DEMONSTRAÇÃO` com diagnostico da etapa atual
+- se a execucao quebrar antes do resumo, o script imprime `FALHA NA DEMONSTRACAO` com diagnostico da etapa atual
 
 Variaveis de ambiente aceitas para customizar a demonstracao:
 
@@ -192,11 +216,18 @@ Variaveis de ambiente aceitas para customizar a demonstracao:
 
 ### Opcao 1 - prova rapida
 
-Use estes dois comandos:
+Linux/macOS:
 
 ```bash
 ./scripts/demo_real.sh
-.venv/bin/pytest tests/test_e2e_live.py -q
+python -m pytest tests/test_e2e_live.py -q
+```
+
+Windows:
+
+```bat
+scripts\demo_real.bat
+python -m pytest tests\test_e2e_live.py -q
 ```
 
 Essa e a forma mais objetiva de mostrar:
@@ -215,13 +246,13 @@ Essa e a forma mais objetiva de mostrar:
 Em um terminal:
 
 ```bash
-.venv/bin/uvicorn services.transactions_service.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn services.transactions_service.main:app --host 0.0.0.0 --port 8000
 ```
 
 Em outro terminal:
 
 ```bash
-.venv/bin/uvicorn services.balance_service.main:app --host 0.0.0.0 --port 8001
+python -m uvicorn services.balance_service.main:app --host 0.0.0.0 --port 8001
 ```
 
 Depois execute:
