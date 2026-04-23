@@ -159,6 +159,22 @@ O output foi desenhado para leitura humana e agora mostra:
 - payloads JSON formatados
 - explicacao dinamica do que cada resposta significa
 - resumo final com os cenarios aprovados
+- comparacao entre valor esperado e valor realmente retornado pela API
+- portas livres escolhidas em tempo de execucao para evitar conflito local
+
+Variaveis de ambiente aceitas para customizar a demonstracao:
+
+- `TRANSACTIONS_PORT`
+- `BALANCE_PORT`
+- `DEMO_DATE`
+- `INITIAL_CREDIT_AMOUNT`
+- `INITIAL_DEBIT_AMOUNT`
+- `OFFLINE_CREDIT_AMOUNT`
+- `OFFLINE_DEBIT_AMOUNT`
+- `LOAD_REQUESTS`
+- `LOAD_CONCURRENCY`
+- `LOAD_MIN_RPS`
+- `LOAD_MAX_LOSS_PERCENTAGE`
 
 ## Como rodar durante a avaliacao
 
