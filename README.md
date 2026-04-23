@@ -39,9 +39,22 @@ python -m pip install -r requirements.txt
 ### Windows PowerShell
 
 ```powershell
-python -3 -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+```
+
+Se o comando `py` nao existir, instale o Python 3.12+ e reabra o PowerShell. Exemplo com `winget`:
+
+```powershell
+winget install -e --id Python.Python.3.12
+```
+
+Se a ativacao do ambiente virtual for bloqueada pela politica de execucao do PowerShell, rode:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\.venv\Scripts\Activate.ps1
 ```
 
 ## Executando os servicos
