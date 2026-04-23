@@ -38,16 +38,46 @@ python -m pip install -r requirements.txt
 
 ### Windows PowerShell
 
+Primeiro confirme se o Python realmente existe no ambiente:
+
+```powershell
+Get-Command py, python
+```
+
+Se **nenhum** dos dois comandos existir, instale o Python 3.12+ e reabra o PowerShell.
+
+Opcao 1, via `winget`:
+
+```powershell
+winget install -e --id Python.Python.3.12
+```
+
+Opcao 2, instalador oficial:
+
+```text
+https://www.python.org/downloads/windows/
+```
+
+Se o Windows continuar mostrando a mensagem da Microsoft Store, desabilite os aliases em:
+
+```text
+Configuracoes > Aplicativos > Configuracoes avancadas de aplicativos > Aliases de execucao do aplicativo
+```
+
+Depois rode:
+
 ```powershell
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-Se o comando `py` nao existir, instale o Python 3.12+ e reabra o PowerShell. Exemplo com `winget`:
+Se apenas `py` falhar, mas `python` existir, use:
 
 ```powershell
-winget install -e --id Python.Python.3.12
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
 Se a ativacao do ambiente virtual for bloqueada pela politica de execucao do PowerShell, rode:
