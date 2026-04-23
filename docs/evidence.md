@@ -50,81 +50,106 @@ Saida observada:
 ======================================================================
 DEMONSTRAÇÃO AUTOMATIZADA DO DESAFIO
 ======================================================================
-Objetivo: provar, de forma legível para um avaliador humano, que a solução funciona ponta a ponta.
+Objetivo: executar uma prova real, com avaliação dinâmica baseada nos retornos da API.
+Configuração desta execução: data=<data-configurada>, porta transactions=<porta-dinamica>, porta balance=<porta-dinamica>.
 
 ======================================================================
 1) SUBIDA DOS SERVIÇOS
 ======================================================================
-[OK] transactions-service inicia saudável
-[OK] balance-service inicia saudável
+[OK] transactions-service iniciou saudável: status=ok, backlog=0
+[OK] balance-service iniciou saudável: status=ok, backlog=0
 [RESULTADO] Health inicial do transactions-service
 {
   "service": "transactions-service",
   "status": "ok",
   "pending_backlog_entries": 0
 }
-  -> O serviço transacional está online e começa sem backlog pendente.
+  -> Status retornado=ok; backlog atual=0.
+  -> Comparação: backlog esperado=0.
+  -> Interpretação: o serviço está sincronizado e sem pendências.
 
 ======================================================================
 2) LANÇAMENTOS INICIAIS E CONSOLIDAÇÃO
 ======================================================================
-[OK] crédito inicial aceito
+[ETAPA] Registrando crédito inicial de <valor-configurado>
+[OK] crédito inicial aceito: tipo=credit, valor=<valor-configurado>, data=<data-configurada>
 [RESULTADO] Crédito inicial registrado
 {
   "id": "<uuid-dinamico>",
   "type": "credit",
-  "amount": "100.00",
-  "date": "2026-01-25",
-  "description": "Venda no caixa",
+  "amount": "<valor-configurado>",
+  "date": "<data-configurada>",
+  "description": "<descricao-configurada>",
   "created_at": "<timestamp-dinamico>"
 }
-  -> Crédito aceito: +100.00 na data 2026-01-25.
-[OK] saldo inicial consolidado correto
+  -> Lançamento aceito com id=<uuid-dinamico>, efeito=+<valor-configurado>, data=<data-configurada>.
+  -> Comparação: valor esperado=<valor-configurado>; valor retornado=<valor-configurado>.
+[OK] extrato inicial consistente: quantidade=2
+[OK] saldo inicial consolidado correto: saldo=<saldo-dinamico>, data=<data-configurada>
 [RESULTADO] Saldo consolidado inicial
 {
-  "date": "2026-01-25",
-  "balance": "74.50",
+  "date": "<data-configurada>",
+  "balance": "<saldo-dinamico>",
   "updated_at": "<timestamp-dinamico>"
 }
-  -> O saldo do dia após os dois primeiros lançamentos é 74.50.
+  -> Saldo retornado=<saldo-dinamico> para a data <data-configurada>.
+  -> Comparação: esperado=<saldo-esperado>; diferença=0.00.
 
 ======================================================================
 3) FALHA CONTROLADA DO CONSOLIDADO
 ======================================================================
-[OK] transactions-service acumula backlog pendente
+[INFO] balance-service foi interrompido de forma controlada para validar a resiliência.
+[OK] transactions-service acumulou backlog pendente esperado: status=ok, backlog=<backlog-esperado>
 [RESULTADO] Health com backlog pendente
 {
   "service": "transactions-service",
   "status": "ok",
-  "pending_backlog_entries": 2
+  "pending_backlog_entries": "<backlog-esperado>"
 }
-  -> O transactions-service segue online e acumulou backlog=2.
+  -> Status retornado=ok; backlog atual=<backlog-esperado>.
+  -> Comparação: backlog esperado=<backlog-esperado>.
+  -> Interpretação: o serviço segue online com pendências enquanto o consolidado está offline.
 
 ======================================================================
 4) RECUPERAÇÃO AUTOMÁTICA DO BACKLOG
 ======================================================================
-[OK] saldo final recomposto corretamente
+[OK] saldo final recomposto corretamente: saldo=<saldo-final>, data=<data-configurada>
 [RESULTADO] Saldo após recuperação
 {
-  "date": "2026-01-25",
-  "balance": "82.50",
+  "date": "<data-configurada>",
+  "balance": "<saldo-final>",
   "updated_at": "<timestamp-dinamico>"
 }
-  -> Após a volta do consolidado, o saldo reprocessado ficou em 82.50.
+  -> Saldo retornado=<saldo-final> para a data <data-configurada>.
+  -> Comparação: esperado=<saldo-final>; diferença=0.00.
+[OK] extrato final contém todos os lançamentos esperados: quantidade=<quantidade-final>
+[OK] lista final de saldos permanece consistente: quantidade=1
+[OK] transactions-service terminou sem backlog: status=ok, backlog=0
+[OK] balance-service terminou saudável: status=ok, backlog=0
 
 ======================================================================
 5) TESTE DE CARGA NO CONSOLIDADO
 ======================================================================
 [RESULTADO] Teste de carga do balance-service
-  - total: 100
-  - success: 100
-  - failed: 0
-  - loss_percent: 0.00
+  - total: <requests-configurados>
+  - success: <requests-com-sucesso>
+  - failed: <requests-com-falha>
+  - loss_percent: <perda-observada>
   - rps: <valor-dinamico>
-  -> A API de leitura consolidada sustentou a carga mínima pedida.
+  -> Comparação: rps mínimo esperado=<min-rps>; rps observado=<valor-dinamico>; perda máxima esperada=<max-loss>%.
+  -> Interpretação: a API sustentou a carga alvo quando os critérios acima forem satisfeitos.
+
+======================================================================
+RESUMO FINAL
+======================================================================
+[OK|FAIL] Inicialização dos serviços: status inicial=<status>; backlog inicial=<valor>.
+[OK|FAIL] Consolidação inicial: esperado=<saldo-esperado>; retornado=<saldo-observado>; lançamentos=<quantidade>.
+[OK|FAIL] Resiliência durante a falha: backlog esperado=<valor>; backlog observado=<valor>.
+[OK|FAIL] Recuperação após a falha: saldo esperado=<valor>; saldo retornado=<valor>; lançamentos=<quantidade>; backlog final=<valor>.
+[OK|FAIL] Teste de carga: rps mínimo=<valor>; rps observado=<valor>; perda máxima=<valor>; perda observada=<valor>.
 ```
 
-Os campos `id`, `created_at`, `updated_at` e `rps` variam a cada execucao, mas a estrutura e os checkpoints validados permanecem os mesmos.
+Os campos `id`, `created_at`, `updated_at`, portas, `rps` e parte dos detalhes do resumo variam a cada execucao. O que permanece fixo e a logica de avaliacao: o script compara valores observados com os valores esperados calculados dinamicamente.
 
 ## Evidencia 3 - imports do ambiente Python
 

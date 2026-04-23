@@ -164,6 +164,12 @@ O output foi desenhado para leitura humana e agora mostra:
 - resumo final com status calculado dinamicamente a partir dos resultados observados
 - secao explicita de falha com etapa, linha e comando quando a execucao quebra
 
+O comportamento esperado e:
+
+- se os resultados reais coincidirem com os esperados, o resumo final mostra linhas com `[OK]`
+- se algum valor nao bater, o resumo final mostra `[FAIL]`
+- se a execucao quebrar antes do resumo, o script imprime `FALHA NA DEMONSTRAÇÃO` com diagnostico da etapa atual
+
 Variaveis de ambiente aceitas para customizar a demonstracao:
 
 - `TRANSACTIONS_PORT`
@@ -177,6 +183,10 @@ Variaveis de ambiente aceitas para customizar a demonstracao:
 - `LOAD_CONCURRENCY`
 - `LOAD_MIN_RPS`
 - `LOAD_MAX_LOSS_PERCENTAGE`
+- `BALANCE_WORKER_POLL_INTERVAL_SECONDS`
+- `DEMO_DB_PATH`
+- `TRANSACTIONS_LOG`
+- `BALANCE_LOG`
 
 ## Como rodar durante a avaliacao
 
