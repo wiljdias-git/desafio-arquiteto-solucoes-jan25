@@ -459,10 +459,9 @@ class DemoRunner:
         if completed.returncode != 0:
             raise DemoError(completed.stderr.strip() or completed.stdout.strip())
 
-        parts = {
-            metric: value
-            for metric, value in (chunk.split("=", 1) for chunk in completed.stdout.strip().split())
-        }
+        parts = dict(
+            chunk.split("=", 1) for chunk in completed.stdout.strip().split()
+        )
         print("[RESULTADO] Teste de carga do balance-service")
         for key in ("total", "success", "failed", "loss_percent", "rps"):
             print(f"  - {key}: {parts[key]}")
