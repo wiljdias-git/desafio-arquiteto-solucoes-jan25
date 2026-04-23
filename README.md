@@ -17,6 +17,7 @@ Este repositorio entrega uma solucao completa para o desafio descrito em `init.m
 - `tests/`: testes automatizados
 - `docs/`: documentacao arquitetural e complementar
 - `scripts/load_balance_service.py`: script simples de carga para o servico de consolidado
+- `scripts/demo_real.sh`: demonstracao ponta a ponta com servicos reais via HTTP
 
 ## Requisitos
 
@@ -87,8 +88,13 @@ curl 'http://127.0.0.1:8001/balances/2026-01-25'
 ## Testes
 
 ```bash
-pytest
+.venv/bin/pytest
 ```
+
+### Testes incluidos
+
+- **unitarios e de API** com `TestClient`
+- **E2E live** com `uvicorn` em subprocessos e chamadas HTTP reais
 
 ## Teste simples de carga
 
@@ -100,12 +106,38 @@ python3 scripts/load_balance_service.py --url http://127.0.0.1:8001/balances/202
 
 O objetivo do script e demonstrar que a API atende uma rajada com **50 requisicoes concorrentes** e medir a taxa de perda observada.
 
+## Demonstracao real automatizada
+
+```bash
+./scripts/demo_real.sh
+```
+
+O script:
+
+1. sobe os dois servicos com `uvicorn`
+2. registra lancamentos reais por HTTP
+3. derruba o consolidado
+4. continua aceitando lancamentos no servico transacional
+5. sobe novamente o consolidado e comprova o reprocessamento do backlog
+6. executa carga com 100 requisicoes e concorrencia 50
+
 ## Documentacao arquitetural
 
 - [Arquitetura alvo e decisoes](docs/architecture.md)
+- [Arquitetura de transicao](docs/transition-architecture.md)
 - [Requisitos refinados](docs/requirements.md)
 - [Diferenciais, custos, seguranca e observabilidade](docs/differentials.md)
+- [Evidencias de execucao](docs/evidence.md)
 
 ## Decisao de implementacao
 
 Para facilitar a avaliacao e a execucao local, a prova de conceito usa SQLite e um backlog persistido na mesma base local. Na arquitetura alvo documentada, a evolucao recomendada e substituir o backlog local por um broker de mensageria e bancos independentes por servico.
+
+## Publicacao em GitHub
+
+O repositorio local ja esta inicializado em Git e com commit em `main`. Para publicar em um repositório publico:
+
+```bash
+git remote add origin <url-do-repositorio-publico>
+git push -u origin main
+```

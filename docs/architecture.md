@@ -10,6 +10,23 @@
 | Operacao da Plataforma | Monitorar saude e fila | Medir backlog, disponibilidade e comportamento operacional |
 | Seguranca e Governanca | Proteger APIs | Validar entrada, reduzir perda de dados e preparar evolucao de autenticacao |
 
+## Desenho de contexto
+
+```mermaid
+flowchart TB
+    Merchant[Comerciante]
+    Backoffice[Operacao / Suporte]
+    TS[Transactions Service]
+    BS[Balance Service]
+    OBS[Observabilidade]
+
+    Merchant -->|registra debitos e creditos| TS
+    Merchant -->|consulta saldo diario| BS
+    Backoffice -->|acompanha saude e backlog| OBS
+    TS --> OBS
+    BS --> OBS
+```
+
 ## Arquitetura proposta
 
 ```mermaid
@@ -22,6 +39,36 @@ flowchart LR
     BS -->|atualiza saldo diario| BAL[(SQLite / daily_balances)]
     TS -->|health| OPS[Monitoramento]
     BS -->|health| OPS
+```
+
+## Desenho de componentes
+
+```mermaid
+flowchart LR
+    subgraph Transactions Service
+        API1[REST API]
+        APP1[Validacao e regras]
+        REPO1[Ledger repository]
+    end
+
+    subgraph Balance Service
+        API2[REST API]
+        WORKER[Backlog worker]
+        REPO2[Balance repository]
+    end
+
+    subgraph Persistencia
+        L[(ledger_entries)]
+        B[(consolidation_backlog)]
+        D[(daily_balances)]
+    end
+
+    API1 --> APP1 --> REPO1
+    REPO1 --> L
+    REPO1 --> B
+    WORKER --> B
+    WORKER --> REPO2 --> D
+    API2 --> REPO2
 ```
 
 ## Fluxo de consolidacao
@@ -93,6 +140,29 @@ sequenceDiagram
   - dono da visao consolidada
   - materializa leitura otimizada por dia
 
+## Desenho de deploy recomendado
+
+```mermaid
+flowchart LR
+    Client[Cliente]
+    APIM[Gateway / API Management]
+    TS[Container App - Transactions]
+    BS[Container App - Balance]
+    PG[(PostgreSQL)]
+    MQ[(Broker de mensagens)]
+    MON[Monitoramento]
+
+    Client --> APIM
+    APIM --> TS
+    APIM --> BS
+    TS --> PG
+    TS --> MQ
+    BS --> MQ
+    BS --> PG
+    TS --> MON
+    BS --> MON
+```
+
 ## Riscos conhecidos e mitigacoes
 
 | Risco | Mitigacao |
@@ -100,4 +170,3 @@ sequenceDiagram
 | Acoplamento por banco local na POC | Evoluir para banco por servico e mensageria dedicada |
 | Crescimento de volume historico | Particionamento/log compaction na evolucao com PostgreSQL e broker |
 | Reprocessamento concorrente | Lock local no Balance Service e backlog com status processado |
-
