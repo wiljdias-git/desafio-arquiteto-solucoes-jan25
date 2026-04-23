@@ -8,6 +8,7 @@ from services.balance_service.main import create_app
 def test_balance_service_processes_backlog_and_returns_daily_balance(
     transactions_client, balance_client
 ):
+    """Processa o backlog pendente e retorna o saldo diario consolidado correto."""
     transactions_client.post(
         "/entries",
         json={"type": "credit", "amount": "100.00", "date": "2026-01-25"},
@@ -31,6 +32,7 @@ def test_balance_service_processes_backlog_and_returns_daily_balance(
 def test_balance_service_catches_up_after_downtime(
     db_path, transactions_client, balance_settings
 ):
+    """Recupera backlog acumulado apos indisponibilidade do consolidado sem perder lancamentos."""
     transactions_client.post(
         "/entries",
         json={"type": "credit", "amount": "50.00", "date": "2026-01-27"},

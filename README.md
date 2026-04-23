@@ -110,6 +110,18 @@ curl 'http://127.0.0.1:8001/balances/2026-01-25'
 .venv/bin/pytest
 ```
 
+Ou, para uma leitura mais enxuta:
+
+```bash
+.venv/bin/pytest -q
+```
+
+O comando `pytest -q` agora entrega um **resumo humano por cenario**, com:
+
+- total de cenarios validados
+- quantidade de aprovacoes, falhas e itens pulados
+- uma linha `[PASS]`, `[FAIL]` ou `[SKIP]` explicando o comportamento validado em cada teste
+
 ### Testes incluidos
 
 - **unitarios e de API** com `TestClient`
@@ -139,6 +151,14 @@ O script:
 4. continua aceitando lancamentos no servico transacional
 5. sobe novamente o consolidado e comprova o reprocessamento do backlog
 6. executa carga com 100 requisicoes e concorrencia 50
+
+O output foi desenhado para leitura humana e agora mostra:
+
+- blocos visuais por etapa
+- validacoes `[OK]` de cada checkpoint
+- payloads JSON formatados
+- explicacao dinamica do que cada resposta significa
+- resumo final com os cenarios aprovados
 
 ## Como rodar durante a avaliacao
 

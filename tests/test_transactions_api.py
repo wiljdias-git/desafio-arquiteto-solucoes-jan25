@@ -2,6 +2,7 @@ from __future__ import annotations
 
 
 def test_register_credit_and_debit_entries(transactions_client):
+    """Registra credito e debito e comprova que os lancamentos ficam persistidos com backlog pendente para consolidacao."""
     credit_response = transactions_client.post(
         "/entries",
         json={
@@ -34,6 +35,7 @@ def test_register_credit_and_debit_entries(transactions_client):
 
 
 def test_transactions_service_accepts_requests_without_balance_service(transactions_client):
+    """Mantem o servico transacional aceitando lancamentos mesmo sem o consolidado disponivel."""
     response = transactions_client.post(
         "/entries",
         json={
@@ -49,10 +51,10 @@ def test_transactions_service_accepts_requests_without_balance_service(transacti
 
 
 def test_transactions_service_rejects_invalid_amount(transactions_client):
+    """Rejeita valores invalidos para proteger a integridade do fluxo de caixa."""
     response = transactions_client.post(
         "/entries",
         json={"type": "credit", "amount": "0.00", "date": "2026-01-26"},
     )
 
     assert response.status_code == 422
-

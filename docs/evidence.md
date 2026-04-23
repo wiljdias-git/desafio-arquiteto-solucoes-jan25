@@ -12,25 +12,28 @@ Este arquivo registra evidencias reais coletadas a partir de:
 Comando executado:
 
 ```bash
-.venv/bin/pytest
+.venv/bin/pytest -q
 ```
 
-Saida observada:
+Saida observada em formato humano:
 
 ```text
-================================================= test session starts ==================================================
-platform linux -- Python 3.12.3, pytest-8.3.5, pluggy-1.6.0
-rootdir: /home/wiljdias/git/personal/desafio-arquiteto-solucoes-jan25
-configfile: pytest.ini
-testpaths: tests
-plugins: anyio-4.13.0
-collecting ... collected 6 items
+[100%]
+============================================== Resumo humano da validacao ==============================================
+Total de cenarios: 6
+Aprovados: 6
+Falhas: 0
+Pulados: 0
 
-tests/test_balance_service.py ..
-tests/test_e2e_live.py .
-tests/test_transactions_api.py ...
+Leitura por cenario:
+  [PASS] Processa o backlog pendente e retorna o saldo diario consolidado correto.
+  [PASS] Recupera backlog acumulado apos indisponibilidade do consolidado sem perder lancamentos.
+  [PASS] Executa o fluxo ponta a ponta com servicos reais via HTTP, incluindo queda e recuperacao do consolidado.
+  [PASS] Registra credito e debito e comprova que os lancamentos ficam persistidos com backlog pendente para consolidacao.
+  [PASS] Mantem o servico transacional aceitando lancamentos mesmo sem o consolidado disponivel.
+  [PASS] Rejeita valores invalidos para proteger a integridade do fluxo de caixa.
 
-================================================== 6 passed in 2.55s ===================================================
+6 passed
 ```
 
 ## Evidencia 2 - demonstracao real ponta a ponta
@@ -44,36 +47,84 @@ Comando executado:
 Saida observada:
 
 ```text
-==> Iniciando Transactions Service
-==> Iniciando Balance Service
-==> Registrando lancamentos iniciais
-{"id":"9eabc4f0-ac01-4f95-9836-2505b6c6b26b","type":"credit","amount":"100.00","date":"2026-01-25","description":"Venda no caixa","created_at":"2026-04-23T20:44:26.854881Z"}
-{"id":"00f87cbb-33d7-4215-93ca-2435ecbcab9a","type":"debit","amount":"25.50","date":"2026-01-25","description":"Pagamento de fornecedor","created_at":"2026-04-23T20:44:26.879454Z"}
-==> Extrato inicial
-[{"id":"00f87cbb-33d7-4215-93ca-2435ecbcab9a","type":"debit","amount":"25.50","date":"2026-01-25","description":"Pagamento de fornecedor","created_at":"2026-04-23T20:44:26.879454Z"},{"id":"9eabc4f0-ac01-4f95-9836-2505b6c6b26b","type":"credit","amount":"100.00","date":"2026-01-25","description":"Venda no caixa","created_at":"2026-04-23T20:44:26.854881Z"}]
-==> Saldo consolidado inicial
-{"date":"2026-01-25","balance":"74.50","updated_at":"2026-04-23T20:44:27.135431Z"}
-==> Lista de saldos inicial
-[{"date":"2026-01-25","balance":"74.50","updated_at":"2026-04-23T20:44:27.135431Z"}]
-==> Derrubando Balance Service
-==> Enviando lancamentos com consolidado offline
-{"id":"401fe2fc-57db-4e67-adea-e878d22aad9b","type":"credit","amount":"10.00","date":"2026-01-25","description":"Venda com consolidado offline","created_at":"2026-04-23T20:44:28.257669Z"}
-{"id":"9b726702-9973-46aa-b073-9a74f8b59793","type":"debit","amount":"2.00","date":"2026-01-25","description":"Despesa com consolidado offline","created_at":"2026-04-23T20:44:28.284641Z"}
-==> Health do Transactions Service com backlog pendente
-{"service":"transactions-service","status":"ok","pending_backlog_entries":2}
-==> Reiniciando Balance Service
-==> Saldo consolidado apos recuperacao
-{"date":"2026-01-25","balance":"82.50","updated_at":"2026-04-23T20:44:28.611918Z"}
-==> Extrato apos recuperacao
-[{"id":"9b726702-9973-46aa-b073-9a74f8b59793","type":"debit","amount":"2.00","date":"2026-01-25","description":"Despesa com consolidado offline","created_at":"2026-04-23T20:44:28.284641Z"},{"id":"401fe2fc-57db-4e67-adea-e878d22aad9b","type":"credit","amount":"10.00","date":"2026-01-25","description":"Venda com consolidado offline","created_at":"2026-04-23T20:44:28.257669Z"},{"id":"00f87cbb-33d7-4215-93ca-2435ecbcab9a","type":"debit","amount":"25.50","date":"2026-01-25","description":"Pagamento de fornecedor","created_at":"2026-04-23T20:44:26.879454Z"},{"id":"9eabc4f0-ac01-4f95-9836-2505b6c6b26b","type":"credit","amount":"100.00","date":"2026-01-25","description":"Venda no caixa","created_at":"2026-04-23T20:44:26.854881Z"}]
-==> Lista de saldos apos recuperacao
-[{"date":"2026-01-25","balance":"82.50","updated_at":"2026-04-23T20:44:28.611918Z"}]
-==> Health final
-{"service":"transactions-service","status":"ok","pending_backlog_entries":0}
-{"service":"balance-service","status":"ok","pending_backlog_entries":0}
-==> Carga no Balance Service
-total=100 success=100 failed=0 loss_percent=0.00 rps=419.16
+======================================================================
+DEMONSTRAÇÃO AUTOMATIZADA DO DESAFIO
+======================================================================
+Objetivo: provar, de forma legível para um avaliador humano, que a solução funciona ponta a ponta.
+
+======================================================================
+1) SUBIDA DOS SERVIÇOS
+======================================================================
+[OK] transactions-service inicia saudável
+[OK] balance-service inicia saudável
+[RESULTADO] Health inicial do transactions-service
+{
+  "service": "transactions-service",
+  "status": "ok",
+  "pending_backlog_entries": 0
+}
+  -> O serviço transacional está online e começa sem backlog pendente.
+
+======================================================================
+2) LANÇAMENTOS INICIAIS E CONSOLIDAÇÃO
+======================================================================
+[OK] crédito inicial aceito
+[RESULTADO] Crédito inicial registrado
+{
+  "id": "<uuid-dinamico>",
+  "type": "credit",
+  "amount": "100.00",
+  "date": "2026-01-25",
+  "description": "Venda no caixa",
+  "created_at": "<timestamp-dinamico>"
+}
+  -> Crédito aceito: +100.00 na data 2026-01-25.
+[OK] saldo inicial consolidado correto
+[RESULTADO] Saldo consolidado inicial
+{
+  "date": "2026-01-25",
+  "balance": "74.50",
+  "updated_at": "<timestamp-dinamico>"
+}
+  -> O saldo do dia após os dois primeiros lançamentos é 74.50.
+
+======================================================================
+3) FALHA CONTROLADA DO CONSOLIDADO
+======================================================================
+[OK] transactions-service acumula backlog pendente
+[RESULTADO] Health com backlog pendente
+{
+  "service": "transactions-service",
+  "status": "ok",
+  "pending_backlog_entries": 2
+}
+  -> O transactions-service segue online e acumulou backlog=2.
+
+======================================================================
+4) RECUPERAÇÃO AUTOMÁTICA DO BACKLOG
+======================================================================
+[OK] saldo final recomposto corretamente
+[RESULTADO] Saldo após recuperação
+{
+  "date": "2026-01-25",
+  "balance": "82.50",
+  "updated_at": "<timestamp-dinamico>"
+}
+  -> Após a volta do consolidado, o saldo reprocessado ficou em 82.50.
+
+======================================================================
+5) TESTE DE CARGA NO CONSOLIDADO
+======================================================================
+[RESULTADO] Teste de carga do balance-service
+  - total: 100
+  - success: 100
+  - failed: 0
+  - loss_percent: 0.00
+  - rps: <valor-dinamico>
+  -> A API de leitura consolidada sustentou a carga mínima pedida.
 ```
+
+Os campos `id`, `created_at`, `updated_at` e `rps` variam a cada execucao, mas a estrutura e os checkpoints validados permanecem os mesmos.
 
 ## Evidencia 3 - imports do ambiente Python
 

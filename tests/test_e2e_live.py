@@ -71,6 +71,7 @@ def _run_service(module: str, port: int, env: dict[str, str]) -> Iterator[subpro
 
 
 def test_live_services_recover_backlog_after_balance_downtime(tmp_path: Path) -> None:
+    """Executa o fluxo ponta a ponta com servicos reais via HTTP, incluindo queda e recuperacao do consolidado."""
     db_path = tmp_path / "cashflow-live.db"
     transactions_port = _get_free_port()
     balance_port = _get_free_port()
