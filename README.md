@@ -37,6 +37,13 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
+Depois disso, tambem e possivel rodar os comandos do projeto sem depender da ativacao manual:
+
+```bash
+./.venv/bin/python -m pytest -q
+./.venv/bin/python scripts/demo_real.py
+```
+
 ### Windows PowerShell
 
 Fluxo recomendado e suportado pela documentacao:
