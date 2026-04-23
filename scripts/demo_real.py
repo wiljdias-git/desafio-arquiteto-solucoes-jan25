@@ -68,6 +68,14 @@ def format_decimal(value: Decimal) -> str:
     return f"{value.quantize(Decimal('0.01')):.2f}"
 
 
+def parse_key_value_output(output: str) -> dict[str, str]:
+    parsed: dict[str, str] = {}
+    for chunk in output.strip().split():
+        key, value = chunk.split("=", 1)
+        parsed[key] = value
+    return parsed
+
+
 def find_free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
@@ -459,9 +467,7 @@ class DemoRunner:
         if completed.returncode != 0:
             raise DemoError(completed.stderr.strip() or completed.stdout.strip())
 
-        parts = dict(
-            chunk.split("=", 1) for chunk in completed.stdout.strip().split()
-        )
+        parts = parse_key_value_output(completed.stdout)
         print("[RESULTADO] Teste de carga do balance-service")
         for key in ("total", "success", "failed", "loss_percent", "rps"):
             print(f"  - {key}: {parts[key]}")
