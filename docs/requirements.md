@@ -7,7 +7,8 @@
 3. O sistema deve permitir listar lancamentos por data.
 4. O sistema deve consolidar o saldo diario a partir dos lancamentos recebidos.
 5. O sistema deve permitir consultar o saldo consolidado por data.
-6. O sistema deve expor saude operacional basica dos dois servicos.
+6. O sistema deve permitir consultar a lista de saldos consolidados por intervalo de datas.
+7. O sistema deve expor saude operacional basica dos dois servicos.
 
 ## Requisitos nao funcionais refinados
 
@@ -32,4 +33,5 @@
 - Consolidar saldo diario corretamente.
 - Demonstrar backlog pendente quando o consolidado estiver parado.
 - Demonstrar processamento do backlog quando o consolidado voltar.
+- Demonstrar consulta do extrato por data e da lista de saldos por intervalo.
 - Executar testes automatizados com sucesso.

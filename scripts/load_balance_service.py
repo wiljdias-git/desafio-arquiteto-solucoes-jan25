@@ -69,21 +69,50 @@ def parse_args() -> argparse.Namespace:
         default=50,
         help="Numero maximo de requisicoes concorrentes.",
     )
+    parser.add_argument(
+        "--min-rps",
+        type=float,
+        default=None,
+        help="Falha o comando se o throughput observado ficar abaixo deste valor.",
+    )
+    parser.add_argument(
+        "--max-loss-percentage",
+        type=float,
+        default=None,
+        help="Falha o comando se a perda observada ultrapassar este valor.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     result = asyncio.run(execute_load(args.url, args.requests, args.concurrency))
-    print(
-        (
-            f"total={result.total_requests} "
-            f"success={result.successful_requests} "
-            f"failed={result.failed_requests} "
-            f"loss_percent={result.loss_percentage:.2f} "
-            f"rps={result.requests_per_second:.2f}"
-        )
+    output = (
+        f"total={result.total_requests} "
+        f"success={result.successful_requests} "
+        f"failed={result.failed_requests} "
+        f"loss_percent={result.loss_percentage:.2f} "
+        f"rps={result.requests_per_second:.2f}"
     )
+    print(output)
+
+    if args.max_loss_percentage is not None and result.loss_percentage > args.max_loss_percentage:
+        raise SystemExit(
+            (
+                "Carga reprovada: "
+                f"loss_percent={result.loss_percentage:.2f} "
+                f"ultrapassou max_loss_percentage={args.max_loss_percentage:.2f}"
+            )
+        )
+
+    if args.min_rps is not None and result.requests_per_second < args.min_rps:
+        raise SystemExit(
+            (
+                "Carga reprovada: "
+                f"rps={result.requests_per_second:.2f} "
+                f"ficou abaixo de min_rps={args.min_rps:.2f}"
+            )
+        )
 
 
 if __name__ == "__main__":

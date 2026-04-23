@@ -46,6 +46,25 @@ Em outro terminal:
 uvicorn services.balance_service.main:app --host 0.0.0.0 --port 8001
 ```
 
+## APIs implementadas
+
+### Transactions Service
+
+| Metodo | Endpoint | Finalidade |
+| --- | --- | --- |
+| `GET` | `/health` | estado do servico e quantidade de backlog pendente |
+| `POST` | `/entries` | registra um lancamento de debito ou credito |
+| `GET` | `/entries` | lista lancamentos; aceita `entry_date=YYYY-MM-DD` |
+
+### Balance Service
+
+| Metodo | Endpoint | Finalidade |
+| --- | --- | --- |
+| `GET` | `/health` | estado do servico e quantidade de backlog pendente |
+| `GET` | `/balances/{entry_date}` | consulta o saldo consolidado de uma data |
+| `GET` | `/balances` | lista saldos consolidados; aceita `start_date` e `end_date` |
+| `POST` | `/internal/process-backlog` | endpoint interno para forcar processamento do backlog |
+
 ## Fluxo de demonstracao
 
 ### 1. Registrar lancamentos
@@ -135,8 +154,12 @@ Use estes dois comandos:
 Essa e a forma mais objetiva de mostrar:
 
 - chamadas HTTP reais
+- validacao automatica dos resultados esperados
+- consulta do extrato e da lista de saldos
 - queda e recuperacao do servico de consolidado
 - reprocessamento do backlog
+- verificacao de health antes, durante e depois da falha
+- validacao do requisito de carga com minimo de 50 rps e ate 5% de perda
 - teste automatizado com os servicos reais no ar
 
 ### Opcao 2 - execucao manual
@@ -195,6 +218,24 @@ O comportamento esperado e:
 - o backlog cresce enquanto o consolidado esta offline
 - o backlog volta para `0` quando o consolidado retorna
 - o saldo diario e recomposto corretamente
+
+## Cobertura dos requisitos do desafio
+
+| Item pedido em `init.md` | Onde foi atendido |
+| --- | --- |
+| Servico que faca o controle de lancamentos | `services/transactions_service/main.py` |
+| Servico do consolidado diario | `services/balance_service/main.py` |
+| Mapeamento de dominios funcionais e capacidades de negocio | `docs/architecture.md` |
+| Refinamento de requisitos funcionais e nao funcionais | `docs/requirements.md` |
+| Desenho completo da Arquitetura Alvo | `docs/architecture.md` |
+| Justificativa de ferramentas, tecnologias e arquitetura | `docs/architecture.md` |
+| Testes | `tests/` |
+| README com execucao local clara | `README.md` |
+| Documentacoes no repositorio | `docs/` e `README.md` |
+| Arquitetura de transicao | `docs/transition-architecture.md` |
+| Estimativa de custos | `docs/differentials.md` |
+| Monitoramento e observabilidade | `docs/differentials.md` e endpoints `/health` |
+| Criterios de seguranca para integracao | `docs/differentials.md` |
 
 ## Documentacao arquitetural
 
