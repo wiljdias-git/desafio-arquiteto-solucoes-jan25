@@ -121,6 +121,81 @@ O script:
 5. sobe novamente o consolidado e comprova o reprocessamento do backlog
 6. executa carga com 100 requisicoes e concorrencia 50
 
+## Como rodar durante a avaliacao
+
+### Opcao 1 - prova rapida
+
+Use estes dois comandos:
+
+```bash
+./scripts/demo_real.sh
+.venv/bin/pytest tests/test_e2e_live.py -q
+```
+
+Essa e a forma mais objetiva de mostrar:
+
+- chamadas HTTP reais
+- queda e recuperacao do servico de consolidado
+- reprocessamento do backlog
+- teste automatizado com os servicos reais no ar
+
+### Opcao 2 - execucao manual
+
+Em um terminal:
+
+```bash
+.venv/bin/uvicorn services.transactions_service.main:app --host 0.0.0.0 --port 8000
+```
+
+Em outro terminal:
+
+```bash
+.venv/bin/uvicorn services.balance_service.main:app --host 0.0.0.0 --port 8001
+```
+
+Depois execute:
+
+```bash
+curl --request POST 'http://127.0.0.1:8000/entries' \
+  --header 'Content-Type: application/json' \
+  --data '{"type":"credit","amount":"100.00","date":"2026-01-25","description":"Venda no caixa"}'
+```
+
+```bash
+curl --request POST 'http://127.0.0.1:8000/entries' \
+  --header 'Content-Type: application/json' \
+  --data '{"type":"debit","amount":"25.50","date":"2026-01-25","description":"Pagamento de fornecedor"}'
+```
+
+```bash
+curl 'http://127.0.0.1:8001/balances/2026-01-25'
+```
+
+O saldo esperado e `74.50`.
+
+## Como explicar a solucao para o avaliador
+
+Use a explicacao abaixo de forma objetiva:
+
+> A solucao foi separada em dois servicos. O `transactions-service` recebe e persiste os lancamentos de debito e credito. O `balance-service` materializa a leitura do saldo diario. O desacoplamento entre eles foi feito com um backlog persistido. Assim, se o consolidado cair, o servico transacional continua operando normalmente e o saldo e reprocessado quando o consolidado volta.
+
+## Como demonstrar resiliencia ao vivo
+
+1. pare o `balance-service`
+2. continue enviando lancamentos para `http://127.0.0.1:8000/entries`
+3. consulte `http://127.0.0.1:8000/health`
+4. mostre que `pending_backlog_entries` aumentou
+5. suba novamente o `balance-service`
+6. consulte `http://127.0.0.1:8001/balances/2026-01-25`
+7. consulte de novo `http://127.0.0.1:8000/health`
+
+O comportamento esperado e:
+
+- o servico transacional nao para
+- o backlog cresce enquanto o consolidado esta offline
+- o backlog volta para `0` quando o consolidado retorna
+- o saldo diario e recomposto corretamente
+
 ## Documentacao arquitetural
 
 - [Arquitetura alvo e decisoes](docs/architecture.md)
