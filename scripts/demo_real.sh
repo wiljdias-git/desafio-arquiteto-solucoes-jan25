@@ -40,6 +40,7 @@ BALANCE_WORKER_POLL_INTERVAL_SECONDS="${BALANCE_WORKER_POLL_INTERVAL_SECONDS:-0.
 DB_PATH="${DEMO_DB_PATH:-$ROOT_DIR/data/demo-real.db}"
 TRANSACTIONS_LOG="${TRANSACTIONS_LOG:-$ROOT_DIR/data/demo-transactions.log}"
 BALANCE_LOG="${BALANCE_LOG:-$ROOT_DIR/data/demo-balance.log}"
+CURRENT_STAGE="inicializacao"
 
 INITIAL_ENTRY_COUNT=2
 OFFLINE_ENTRY_COUNT=2
@@ -64,7 +65,22 @@ section() {
 }
 
 step() {
+  CURRENT_STAGE="$1"
   printf '\n[ETAPA] %s\n' "$1"
+}
+
+on_error() {
+  local line_number="$1"
+  local command="$2"
+  trap - ERR
+  section "FALHA NA DEMONSTRAÇÃO"
+  printf '%s\n' "[FAIL] Etapa atual: $CURRENT_STAGE"
+  printf '%s\n' "[FAIL] Linha: $line_number"
+  printf '%s\n' "[FAIL] Comando: $command"
+  printf '\n%s\n' "Logs capturados:"
+  printf '  - %s\n' "$TRANSACTIONS_LOG"
+  printf '  - %s\n' "$BALANCE_LOG"
+  exit 1
 }
 
 run_python() {
@@ -139,6 +155,19 @@ expression = os.environ["DECIMAL_EXPRESSION"]
 safe_globals = {"__builtins__": {}, "Decimal": Decimal}
 value = eval(expression, safe_globals, {})
 print(f"{Decimal(value):.2f}")
+PY
+}
+
+decimal_condition() {
+  local expression="$1"
+  DECIMAL_CONDITION_EXPRESSION="$expression" run_python - <<'PY'
+from decimal import Decimal
+import os
+
+expression = os.environ["DECIMAL_CONDITION_EXPRESSION"]
+safe_globals = {"__builtins__": {}, "Decimal": Decimal}
+result = bool(eval(expression, safe_globals, {}))
+print("true" if result else "false")
 PY
 }
 
@@ -316,6 +345,13 @@ else:
 PY
 }
 
+summary_status_line() {
+  local status="$1"
+  local label="$2"
+  local detail="$3"
+  printf '[%s] %s: %s\n' "$status" "$label" "$detail"
+}
+
 start_transactions_service() {
   CASHFLOW_DB_PATH="$DB_PATH" "$UVICORN" services.transactions_service.main:app \
     --host 127.0.0.1 --port "$TRANSACTIONS_PORT" >"$TRANSACTIONS_LOG" 2>&1 &
@@ -338,6 +374,7 @@ post_entry() {
     --data "$payload"
 }
 
+trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
 trap cleanup EXIT
 
 ensure_runtime
@@ -461,19 +498,47 @@ show_load_output "$load_output" "$load_ctx"
 
 INITIAL_BALANCE_ACTUAL="$(json_query "$balance_initial" "data['balance']")"
 FINAL_BALANCE_ACTUAL="$(json_query "$balance_recovered" "data['balance']")"
+INITIAL_BACKLOG_ACTUAL="$(json_query "$transactions_health_initial" "data['pending_backlog_entries']")"
 PENDING_BACKLOG_ACTUAL="$(json_query "$transactions_health_pending" "data['pending_backlog_entries']")"
 FINAL_BACKLOG_ACTUAL="$(json_query "$transactions_health_final" "data['pending_backlog_entries']")"
+INITIAL_STATUS_ACTUAL="$(json_query "$transactions_health_initial" "data['status']")"
+FINAL_STATUS_ACTUAL="$(json_query "$transactions_health_final" "data['status']")"
+BALANCE_FINAL_STATUS_ACTUAL="$(json_query "$balance_health_final" "data['status']")"
 LOAD_RPS_ACTUAL="$(load_query "$load_output" "rps")"
 LOAD_LOSS_ACTUAL="$(load_query "$load_output" "loss_percent")"
 INITIAL_ENTRY_COUNT_ACTUAL="$(json_query "$entries_initial" "len(data)")"
 FINAL_ENTRY_COUNT_ACTUAL="$(json_query "$entries_recovered" "len(data)")"
 
 section "RESUMO FINAL"
-printf '%s\n' "[OK] Serviços iniciaram com backlog inicial zero e status saudavel."
-printf '%s\n' "[OK] Saldo inicial: esperado=$INITIAL_EXPECTED_BALANCE | retornado=$INITIAL_BALANCE_ACTUAL | lançamentos no extrato=$INITIAL_ENTRY_COUNT_ACTUAL."
-printf '%s\n' "[OK] Durante a falha do consolidado, o backlog observado foi $PENDING_BACKLOG_ACTUAL."
-printf '%s\n' "[OK] Após a recuperação, saldo final esperado=$FINAL_EXPECTED_BALANCE | retornado=$FINAL_BALANCE_ACTUAL | lançamentos finais=$FINAL_ENTRY_COUNT_ACTUAL."
-printf '%s\n' "[OK] Teste de carga: rps observado=$LOAD_RPS_ACTUAL | perda observada=${LOAD_LOSS_ACTUAL}%."
+if [[ "$INITIAL_BACKLOG_ACTUAL" == "0" && "$INITIAL_STATUS_ACTUAL" == "ok" ]]; then
+  summary_status_line "OK" "Inicialização dos serviços" "status inicial=$INITIAL_STATUS_ACTUAL; backlog inicial=$INITIAL_BACKLOG_ACTUAL."
+else
+  summary_status_line "FAIL" "Inicialização dos serviços" "status inicial=$INITIAL_STATUS_ACTUAL; backlog inicial=$INITIAL_BACKLOG_ACTUAL."
+fi
+
+if [[ "$INITIAL_BALANCE_ACTUAL" == "$INITIAL_EXPECTED_BALANCE" && "$INITIAL_ENTRY_COUNT_ACTUAL" == "$INITIAL_ENTRY_COUNT" ]]; then
+  summary_status_line "OK" "Consolidação inicial" "esperado=$INITIAL_EXPECTED_BALANCE; retornado=$INITIAL_BALANCE_ACTUAL; lançamentos=$INITIAL_ENTRY_COUNT_ACTUAL."
+else
+  summary_status_line "FAIL" "Consolidação inicial" "esperado=$INITIAL_EXPECTED_BALANCE; retornado=$INITIAL_BALANCE_ACTUAL; lançamentos=$INITIAL_ENTRY_COUNT_ACTUAL."
+fi
+
+if [[ "$PENDING_BACKLOG_ACTUAL" == "$EXPECTED_PENDING_BACKLOG" ]]; then
+  summary_status_line "OK" "Resiliência durante a falha" "backlog esperado=$EXPECTED_PENDING_BACKLOG; backlog observado=$PENDING_BACKLOG_ACTUAL."
+else
+  summary_status_line "FAIL" "Resiliência durante a falha" "backlog esperado=$EXPECTED_PENDING_BACKLOG; backlog observado=$PENDING_BACKLOG_ACTUAL."
+fi
+
+if [[ "$FINAL_BALANCE_ACTUAL" == "$FINAL_EXPECTED_BALANCE" && "$FINAL_ENTRY_COUNT_ACTUAL" == "$FINAL_ENTRY_COUNT" && "$FINAL_BACKLOG_ACTUAL" == "0" && "$FINAL_STATUS_ACTUAL" == "ok" && "$BALANCE_FINAL_STATUS_ACTUAL" == "ok" ]]; then
+  summary_status_line "OK" "Recuperação após a falha" "saldo esperado=$FINAL_EXPECTED_BALANCE; saldo retornado=$FINAL_BALANCE_ACTUAL; lançamentos=$FINAL_ENTRY_COUNT_ACTUAL; backlog final=$FINAL_BACKLOG_ACTUAL."
+else
+  summary_status_line "FAIL" "Recuperação após a falha" "saldo esperado=$FINAL_EXPECTED_BALANCE; saldo retornado=$FINAL_BALANCE_ACTUAL; lançamentos=$FINAL_ENTRY_COUNT_ACTUAL; backlog final=$FINAL_BACKLOG_ACTUAL; status tx=$FINAL_STATUS_ACTUAL; status balance=$BALANCE_FINAL_STATUS_ACTUAL."
+fi
+
+if [[ "$(decimal_condition "Decimal('$LOAD_RPS_ACTUAL') >= Decimal('$LOAD_MIN_RPS') and Decimal('$LOAD_LOSS_ACTUAL') <= Decimal('$LOAD_MAX_LOSS_PERCENTAGE')")" == "true" ]]; then
+  summary_status_line "OK" "Teste de carga" "rps mínimo=$LOAD_MIN_RPS; rps observado=$LOAD_RPS_ACTUAL; perda máxima=${LOAD_MAX_LOSS_PERCENTAGE}%; perda observada=${LOAD_LOSS_ACTUAL}%."
+else
+  summary_status_line "FAIL" "Teste de carga" "rps mínimo=$LOAD_MIN_RPS; rps observado=$LOAD_RPS_ACTUAL; perda máxima=${LOAD_MAX_LOSS_PERCENTAGE}%; perda observada=${LOAD_LOSS_ACTUAL}%."
+fi
 printf '\n%s\n' "Logs gerados:"
 printf '  - %s\n' "$TRANSACTIONS_LOG"
 printf '  - %s\n' "$BALANCE_LOG"

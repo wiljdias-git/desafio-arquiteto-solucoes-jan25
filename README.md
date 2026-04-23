@@ -161,6 +161,8 @@ O output foi desenhado para leitura humana e agora mostra:
 - resumo final com os cenarios aprovados
 - comparacao entre valor esperado e valor realmente retornado pela API
 - portas livres escolhidas em tempo de execucao para evitar conflito local
+- resumo final com status calculado dinamicamente a partir dos resultados observados
+- secao explicita de falha com etapa, linha e comando quando a execucao quebra
 
 Variaveis de ambiente aceitas para customizar a demonstracao:
 
